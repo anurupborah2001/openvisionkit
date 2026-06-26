@@ -151,7 +151,7 @@ jobs:
               echo "| Version bump commit | pushed to \`master\` |"
               echo "| Git tag | \`${{ steps.bump.outputs.tag }}\` pushed |"
               echo "| GitHub release | → **github-release** job below |"
-              echo "| PyPI publish | → **publish-pypi** job below |"
+              echo "| PyPI publish | → **publish.yml** dispatched at tag |"
             } >> "$GITHUB_STEP_SUMMARY"
           else
             {
@@ -175,41 +175,27 @@ jobs:
       prerelease:     false
 
   # ── PyPI Publish ────────────────────────────────────────────────────────────
-  # Inlined (not reusable workflow) because PyPI trusted publishing does not
-  # support reusable workflows — the job_workflow_ref must equal the calling
-  # workflow ref for the OIDC claim to match the configured trusted publisher.
-  publish-pypi:
-    name: Publish to PyPI
+  # Dispatched via publish.yml so job_workflow_ref matches the registered
+  # PyPI trusted publisher (which is configured for publish.yml, not this file).
+  # OIDC claim validation requires an exact workflow filename match.
+  trigger-publish:
+    name: Trigger PyPI publish
     needs: release
     if: needs.release.outputs.released == 'true'
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/project/visionkit/
     permissions:
-      contents: read
-      id-token: write
+      actions: write
 
     steps:
-      - name: Check out repository at tag
-        uses: actions/checkout@v4
+      - name: Dispatch publish.yml at release tag
+        uses: actions/github-script@v7
         with:
-          ref: ${{ needs.release.outputs.tag }}
-          fetch-tags: true
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          python-version: "3.11"
-          enable-cache: true
-
-      - name: Build distributions (sdist + wheel)
-        run: uv build
-
-      - name: Validate distributions with twine
-        run: |
-          uv tool install twine
-          uv tool run twine check dist/*
-
-      - name: Publish to PyPI (trusted publisher / OIDC)
-        uses: pypa/gh-action-pypi-publish@release/v1
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              workflow_id: 'publish.yml',
+              ref:   '${{ needs.release.outputs.tag }}',
+              inputs: { target: 'pypi' },
+            })
