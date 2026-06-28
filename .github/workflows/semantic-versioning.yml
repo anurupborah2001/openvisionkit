@@ -132,9 +132,12 @@ jobs:
           echo "Bumped to: v${VERSION}"
 
       # ── Push commit + tag ──────────────────────────────────────────────────
+      # Rebase the bump commit onto latest master before pushing to handle
+      # the case where master moved (e.g. a PR merged) between checkout and now.
       - name: Push version commit and tag
         if: steps.bump.outputs.released == 'true'
         run: |
+          git pull --rebase origin master
           git push origin HEAD:master
           git push origin "refs/tags/${{ steps.bump.outputs.tag }}"
 
