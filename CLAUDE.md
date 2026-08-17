@@ -383,7 +383,7 @@ All workflows live in `.github/workflows/`.
 ### `renovate.yml` — Dependency updates
 
 - **Triggers:** weekly Monday 01:00 UTC; `workflow_dispatch` with `dry_run` option
-- Uses `renovatebot/github-action@v40`
+- Uses `renovatebot/github-action` pinned to a commit SHA (currently `v46.2.2`) — the repo does not publish floating major tags like `v46`, so a SHA or exact semver tag is required
 - Configuration in `renovate.json`:
   - `osvVulnerabilityAlerts: true` — immediate security PRs regardless of schedule
   - Auto-merge minor/patch for dev tools
