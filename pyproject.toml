@@ -41,6 +41,9 @@ dev = [
     "flake8-simplify>=0.30.0",
     "hatchling>=1.30.1",
     "isort>=8.0.1",
+    # pip is a transitive dep of pip-api (via pip-audit).
+    # Pinned >=26.2 to exclude PYSEC-2026-3721 / CVE-2026-13346.
+    "pip>=26.2",
     "pip-audit>=2.9.0",
     "pre-commit>=4.6.0",
     "pytest>=9.0.3",
